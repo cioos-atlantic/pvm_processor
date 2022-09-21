@@ -1,0 +1,101 @@
+{
+  "blank_max": 1,
+  "row_max": 75,
+  "datetime_format_in": "%d/%m/%Y;%H:%M",
+  "datetime_format_out": "%Y-%m-%dT%H:%M:%SZ",
+  "datetime_pattern": "^\\d+\\/\\d+\\/\\d+;\\d+:\\d+$",
+  "numerical_pattern": "^\\d+(\\.\\d+)?$",
+  "spectral_pattern": "^\\d+\\.\\d+;\\d+\\.\\d+;\\d+;\\d+$",
+  "timeseries_config": [
+    {
+      "field_name": "timestamp",
+      "long_name": "Start of Record",
+      "index": [],
+      "data": [],
+      "series": null
+    },
+    {
+      "field_name": "wave_ht_sig",
+      "long_name": "Significant Wave Height (H1/3)",
+      "index": [],
+      "data": [],
+      "series": null
+    },
+    {
+      "field_name": "wave_ht_max",
+      "long_name": "Maximum Wave Height (Hmax)",
+      "index": [],
+      "data": [],
+      "series": null
+    },
+    {
+      "field_name": "wave_period_avg",
+      "long_name": "Sea Surface Wave Mean Period (TH1/3)",
+      "index": [],
+      "data": [],
+      "series": null
+    },
+    {
+      "field_name": "timestamp_internal",
+      "long_name": "Internal Timestamp",
+      "index": [],
+      "data": [],
+      "series": null
+    },
+    {
+      "field_name": "wave_ht_sig_Hm0",
+      "long_name": "Spectral Significant Wave Height (Hm0)",
+      "index": [],
+      "data": [],
+      "series": null
+    },
+    {
+      "field_name": "wave_period",
+      "long_name": "Mean wave period T(0,2) (s)",
+      "index": [],
+      "data": [],
+      "series": null
+    },
+    {
+      "field_name": "wave_period_peak",
+      "long_name": "Tpeak (s)",
+      "index": [],
+      "data": [],
+      "series": null
+    },
+    {
+      "field_name": "wave_direction_peak_spectral",
+      "long_name": "(degree)",
+      "index": [],
+      "data": [],
+      "series": null
+    },
+    {
+      "field_name": "wave_spread_peak",
+      "long_name": "(degree)",
+      "index": [],
+      "data": [],
+      "series": null
+    },
+    {
+      "field_name": "sea_surface_temp_avg",
+      "long_name": "Sea Surface Temp (C)",
+      "index": [],
+      "data": [],
+      "series": null
+    },
+    {
+      "field_name": "peak_power_spectral_density",
+      "long_name": "peak power spectral density (m^2 Hz-1)",
+      "index": [],
+      "data": [],
+      "series": null
+    }
+  ],
+  "wave_spectra_config": {
+    "index": [],
+    "data": [],
+    "field_names": ["period", "relative_PSD", "direction", "spread"],
+    "dataframe": null
+  }
+}

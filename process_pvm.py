@@ -1,23 +1,12 @@
 from time import strftime, strptime
 import pandas as pd
 import re
+import json
 
-timeseries_fields = [
-    {"field_name": "timestamp", "long_name": "Start of Record", "index": [], "data": [], "series": None}, 
-    {"field_name": "wave_ht_sig", "long_name": "Significant Wave Height (H1/3)", "index": [], "data": [], "series": None}, 
-    {"field_name": "wave_ht_max", "long_name": "Maximum Wave Height (Hmax)", "index": [], "data": [], "series": None}, 
-    {"field_name": "wave_period_avg", "long_name": "Sea Surface Wave Mean Period (TH1/3)", "index": [], "data": [], "series": None}, 
-    {"field_name": "timestamp_internal", "long_name": "Internal Timestamp", "index": [], "data": [], "series": None}, 
-    {"field_name": "wave_ht_sig_Hm0", "long_name": "Spectral Significant Wave Height (Hm0)", "index": [], "data": [], "series": None}, 
-    {"field_name": "wave_period", "long_name": "Mean wave period T(0,2) (s)", "index": [], "data": [], "series": None}, 
-    {"field_name": "wave_period_peak", "long_name": "Tpeak (s)", "index": [], "data": [], "series": None}, 
-    {"field_name": "wave_direction_peak_spectral", "long_name": "(degree)", "index": [], "data": [], "series": None}, 
-    {"field_name": "wave_spread_peak", "long_name": "(degree)", "index": [], "data": [], "series": None}, 
-    {"field_name": "sea_surface_temp_avg", "long_name": "Sea Surface Temp (C)", "index": [], "data": [], "series": None}, 
-    {"field_name": "peak_power_spectral_density", "long_name": "peak power spectral density (m^2 Hz-1)", "index": [], "data": [], "series": None}, 
-]
+config = json.load(open('config.json'))
 
-wave_spectra_data = {"index": [], "data": [], "field_names": ["period", "relative_PSD", "direction", "spread"], 'dataframe': None}
+timeseries_fields = config["timeseries_config"]
+wave_spectra_data = config["wave_spectra_config"]
 
 # A single PVM record
 # 12/09/2022;11:30
@@ -40,16 +29,14 @@ wave_spectra_data = {"index": [], "data": [], "field_names": ["period", "relativ
 #  1.72;0.000000;353;0
 
 # French Date/Time Pattern: DD/MM/YYYY;HH:mm
-FRA_date_time_format = '%d/%m/%Y;%H:%M'
+date_time_format = config["datetime_format_in"]
 
-datetime_pattern = re.compile('^\d+\/\d+\/\d+;\d+:\d+$')
-numerical_pattern = re.compile('^\d+(\.\d+)?$')
-spectral_pattern = re.compile('^\d+\.\d+;\d+\.\d+;\d+;\d+$')
+datetime_pattern = re.compile(config["datetime_pattern"])
+numerical_pattern = re.compile(config["numerical_pattern"])
+spectral_pattern = re.compile(config["spectral_pattern"])
 
 fp = open("sample/97501 - Saint-Pierre et Miquelon.pvm", 'r', encoding='UTF-8')
 raw_data = fp.readlines()
-
-# print(fp)
 
 # Remove first row as it is unique and contains the station identification
 dataset_id = raw_data.pop(0)
@@ -60,9 +47,9 @@ wave_data = []
 spectral_data = []
 row_counter = 0
 blank_counter = 0
-blank_max = 1
+blank_max = config["blank_max"]
 start_of_record = None
-row_max = 75 # 76 rows per record, last 64 are wave spectra
+row_max = config["row_max"] # 76 rows per record, last 64 are wave spectra
 
 for raw_row in raw_data:
     # get rid of whitespace and line endings
@@ -73,7 +60,7 @@ for raw_row in raw_data:
     spectra_check = spectral_pattern.match(row)
 
     if datetime_check:
-        value = strftime('%Y-%m-%dT%H:%M:%SZ', strptime(row, FRA_date_time_format))
+        value = strftime(config["datetime_format_out"], strptime(row, date_time_format))
         # print("Found Datetime!", value)
 
         # The first date/time of a batch of values is the date/time index of 
@@ -138,3 +125,4 @@ print(df_timeseries)
 print("Wave Spectra Data:")
 wave_spectra_data["dataframe"] = pd.DataFrame(wave_spectra_data["data"], index=wave_spectra_data["index"], columns=wave_spectra_data["field_names"])
 print(wave_spectra_data["dataframe"])
+
