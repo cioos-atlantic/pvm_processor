@@ -1,7 +1,15 @@
 from time import strftime, strptime
+import numpy as np
 import pandas as pd
+import xarray as xr
 import re
 import json
+import os
+from pathlib import Path
+
+# Separates the data into daily chunks
+ts_interval_format = "%Y%m%d"
+ws_interval_format = "%Y%m%d%H%M%S"
 
 config = json.load(open('config.json'))
 
@@ -118,11 +126,99 @@ print("Building timeseries dataframe...")
 
 # Join list of pandas series into a dataframe using the same timestamp
 df_timeseries = pd.concat(series_list, axis='columns')
+df_timeseries.index = pd.to_datetime(df_timeseries.index)
 
 print(df_timeseries.info())
 print(df_timeseries)
 
 print("Wave Spectra Data:")
 wave_spectra_data["dataframe"] = pd.DataFrame(wave_spectra_data["data"], index=wave_spectra_data["index"], columns=wave_spectra_data["field_names"])
+wave_spectra_data["dataframe"].index = pd.to_datetime(wave_spectra_data["dataframe"].index)
+
+print(wave_spectra_data["dataframe"].info())
 print(wave_spectra_data["dataframe"])
 
+# Output options: CSV (pandas) or NetCDF (xarray)
+
+# get list of output paths for each dataset
+ts_log_files = df_timeseries.index.strftime(config["timeseries_output"]).unique()
+ts_file_index = df_timeseries.index.strftime(ts_interval_format).unique()
+
+ws_log_files = df_timeseries.index.strftime(config["wave_spectra_output"]).unique()
+ws_file_index = wave_spectra_data["dataframe"].index.strftime(ws_interval_format).unique()
+
+# print(ts_log_files)
+# print(ts_file_index)
+
+# print(ws_log_files)
+# print(ws_file_index)
+
+if config["output_format"] == "csv":
+    # Can encounter duplicates, will need to account for this
+    for index, log_file in enumerate(ts_log_files):
+        ts_output_path = f"{log_file}.{config['output_format']}"
+        # Find the corresponding date index to the generated file list
+        date_key = ts_file_index[index]
+        df_section = df_timeseries.loc[date_key]
+        skip_file = False
+
+        if not Path(os.path.dirname(ts_output_path)).exists():
+            os.makedirs(os.path.dirname(ts_output_path))
+
+        if Path(ts_output_path).exists():
+            print(f"Existing file found! {ts_output_path}")
+            df_existing_data = pd.read_csv(ts_output_path, index_col=config["datetime_index_field"], parse_dates=True)
+            
+            # Insert timestamp column based on index in first position, format
+            # according to datetime output format
+            df_existing_data.insert(0, config["datetime_index_field"], df_existing_data.index.to_series().dt.strftime(config["datetime_format_out"]))
+
+            # print("Current Data:")
+            # print(df_section.info())
+            # print(df_section)
+
+            # print("Existing Data:")
+            # print(df_existing_data.info())
+            # print(df_existing_data)
+
+            # print("Index Differences:")
+            # Checks for records in existing file not present in new dataframe
+            diff_idx_existing = df_existing_data.index.difference(df_section.index, sort=False)
+
+            # Checks for records in new dataframe that are not in existing file,
+            # if there is a difference then both dataframes should be merged.
+            diff_idx_new = df_section.index.difference(df_existing_data.index, sort=False)
+            # print(diff_idx_existing)
+            # print(diff_idx_new)
+
+            if not diff_idx_new.empty:
+                print("Differences found between existing file and new data - merging dataframes...")
+                # print(df_section.loc[diff_idx_new])
+
+                df_merged = pd.concat([df_existing_data, df_section.loc[diff_idx_new]])
+                df_section = df_merged
+            else:
+                print("File indexes match, no new data detected, skipping.")
+                skip_file = True
+
+        if not skip_file:
+            df_section.sort_index().to_csv(ts_output_path, index=False)
+
+    # By separating into individual files per spectral observation there is no 
+    # need to account for duplicate observances
+    for index, log_file in enumerate(ws_log_files):
+        ws_output_path = f"{log_file}.{config['output_format']}"
+        # Find the corresponding date index to the generated file list
+        date_key = ws_file_index[index]
+
+        if not Path(os.path.dirname(ws_output_path)).exists():
+            os.makedirs(os.path.dirname(ws_output_path))
+
+        if not Path(ws_output_path).exists():
+            wave_spectra_data["dataframe"].loc[date_key].to_csv(ws_output_path, index=False)
+        else:
+            print(f"Wave Spectra file ({ws_output_path}) already exists, skipping...")
+
+elif config["output_format"] == "nc":
+    # use xarray
+    pass

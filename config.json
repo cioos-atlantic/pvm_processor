@@ -1,8 +1,12 @@
 {
   "blank_max": 1,
   "row_max": 75,
+  "output_format": "csv",
+  "timeseries_output": "./output/timeseries/%Y/97501_timeseries_%Y%m%d",
+  "wave_spectra_output": "./output/wave_spectra/%Y/%m/%d/97501_wave_spectra_%Y%m%d%H%M%S",
   "datetime_format_in": "%d/%m/%Y;%H:%M",
   "datetime_format_out": "%Y-%m-%dT%H:%M:%SZ",
+  "datetime_index_field": "timestamp",
   "datetime_pattern": "^\\d+\\/\\d+\\/\\d+;\\d+:\\d+$",
   "numerical_pattern": "^\\d+(\\.\\d+)?$",
   "spectral_pattern": "^\\d+\\.\\d+;\\d+\\.\\d+;\\d+;\\d+$",
