@@ -1,6 +1,5 @@
 {
   "blank_max": 1,
-  "row_max": 75,
   "output_format": "csv",
   "timeseries_output": "./output/timeseries/%Y/97501_timeseries_%Y%m%d",
   "wave_spectra_output": "./output/wave_spectra/%Y/%m/%d/97501_wave_spectra_%Y%m%d%H%M%S",
