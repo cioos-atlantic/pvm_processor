@@ -1,6 +1,9 @@
 import argparse
 import json
 from pvm_processor.process_pvm import process_pvm
+import os
+from pathlib import Path
+from copy import deepcopy
 
 if __name__ == "__main__":
     raw_args = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -17,22 +20,34 @@ if __name__ == "__main__":
 
     raw_args.add_argument(
         "--batch",
-        help="Source file argument is a directory path and all files in the directory should be processed using the same configuration",
-        action="store_true",
+        help="Specifies the kind of wildcard pattern to match files inside the source_file directory and subdirectories.  Uses glob pattern matching.",
+        action="store",
     )
 
     prog_args = raw_args.parse_args()
 
     config = json.load(open(prog_args.configuration_file))
 
-    if config.batch:
+    if prog_args.batch:
         # Load list of files into a directory
-        pass
+        for source_file in Path(os.path.dirname(prog_args.source_file)).glob(prog_args.batch):
+            # re-loading the configuration file each time prevents the internal 
+            # dataframes from becoming ultra massive
+            fresh_config = deepcopy(config)
+            print(f"Loading: {source_file}...")
 
-    # fp = open("sample/97501 - Saint-Pierre et Miquelon.pvm", 'r', encoding='UTF-8')
-    fp = open(prog_args.source_file, 'r', encoding='UTF-8')
-    raw_data = fp.readlines()
-    fp.close()
-
-    process_pvm(config, raw_data)
-
+            fp = open(source_file, 'r', encoding='UTF-8')
+            raw_data = fp.readlines()
+            fp.close()
+            
+            print(f"Processing {source_file} ...")
+            process_pvm(fresh_config, raw_data)
+            print("Done.")
+    else:
+        fp = open(prog_args.source_file, 'r', encoding='UTF-8')
+        raw_data = fp.readlines()
+        fp.close()
+        
+        print(f"Processing {prog_args.source_file} ...")
+        process_pvm(config, raw_data)
+        print("Done.")
