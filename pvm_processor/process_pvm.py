@@ -9,6 +9,9 @@ from pathlib import Path
 FORMAT_CSV = "csv"
 FORMAT_NetCDF = "nc"
 
+DATASET_TIMESERIES = "timeseries"
+DATASET_WAVE_SPECTRA = "wave_spectra"
+
 def process_pvm(config, raw_data):
 
     # Separates the data into daily chunks
@@ -196,8 +199,7 @@ def process_pvm(config, raw_data):
 
         if not skip_file:
             # df_section.sort_index().to_csv(ts_output_path, index=False)
-            dataset_type = "timeseries"
-            write_dataset(df_section, config["output_format"], date_key, ts_output_path)
+            write_dataset(df_section, DATASET_TIMESERIES, config["output_format"], date_key, ts_output_path)
 
     # By separating into individual files per spectral observation there is no 
     # need to account for duplicate observances
@@ -210,8 +212,7 @@ def process_pvm(config, raw_data):
             os.makedirs(os.path.dirname(ws_output_path))
 
         if not Path(ws_output_path).exists():
-            dataset_type = "wave_spectra"
-            write_dataset(wave_spectra_data["dataframe"], dataset_type, config["output_format"], date_key, ws_output_path)
+            write_dataset(wave_spectra_data["dataframe"], DATASET_WAVE_SPECTRA, config["output_format"], date_key, ws_output_path)
             
         else:
             print(f"Wave Spectra file ({ws_output_path}) already exists, skipping...")
@@ -227,7 +228,10 @@ def write_dataset(data, dataset_type, destination_format, date_key, output_path)
         data_xr = xr.Dataset.from_dataframe(data)
         
         # set metadata based on config
-
+        if dataset_type == DATASET_TIMESERIES:
+            pass
+        elif dataset_type == DATASET_WAVE_SPECTRA:
+            pass
 
         print(data_xr)
         result = data_xr.to_netcdf(output_path, mode='a', format='NETCDF4_CLASSIC')

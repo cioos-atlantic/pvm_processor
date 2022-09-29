@@ -8,7 +8,7 @@ setup(name='pvm_processor',
       author='Scott Bruce',
       author_email='scott.bruce@cioosatlantic.ca',
       license='GPL3',
-      packages=['pvm_processor'],
+      packages=[''],
       zip_safe=False,
       install_requires=open("requirements.txt").read().splitlines()
       )
