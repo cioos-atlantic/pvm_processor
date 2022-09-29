@@ -5,12 +5,18 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Python: Current File",
+            "name": "Sample File to NetCDF, Standard config",
             "type": "python",
             "request": "launch",
-            "program": "${file}",
+            "program": "pvm_processor",
             "console": "integratedTerminal",
-            "justMyCode": true
+            "justMyCode": true,
+            "args": [
+                "config.json",
+                ".\\sample\\97501 - Saint-Pierre et Miquelon.pvm",
+                "--format",
+                "nc"
+            ]
         }
     ]
 }

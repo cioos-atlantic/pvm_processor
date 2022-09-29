@@ -2,6 +2,10 @@
 
 A python tool to transform PVM wave data files into timeseries and wave spectra files appropriate for ingestion into an OPeNDAP server.
 
+Splits a PVM file as described in the /sample/ directory into two different datasets - timeseries wave data and spectral wave data into different output formats.
+
+Currently only CSV is supported.
+
 ## Setup
 
 ```

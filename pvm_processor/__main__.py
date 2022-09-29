@@ -1,9 +1,10 @@
 import argparse
 import json
-from pvm_processor.process_pvm import process_pvm
+from process_pvm import process_pvm
 import os
 from pathlib import Path
 from copy import deepcopy
+# import netCDF4
 
 if __name__ == "__main__":
     raw_args = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -19,6 +20,13 @@ if __name__ == "__main__":
     )
 
     raw_args.add_argument(
+        "--format",
+        help="Specifies the output format for the resulting datasets (CSV or NetCDF).  Acceptable values: csv or nc, default: csv",
+        action="store",
+        default="csv"
+    )
+
+    raw_args.add_argument(
         "--batch",
         help="Specifies the kind of wildcard pattern to match files inside the source_file directory and subdirectories.  Uses glob pattern matching.",
         action="store",
@@ -27,6 +35,7 @@ if __name__ == "__main__":
     prog_args = raw_args.parse_args()
 
     config = json.load(open(prog_args.configuration_file))
+    config["output_format"] = prog_args.format
 
     if prog_args.batch:
         # Load list of files into a directory

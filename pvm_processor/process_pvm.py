@@ -6,6 +6,9 @@ import re
 import os
 from pathlib import Path
 
+FORMAT_CSV = "csv"
+FORMAT_NetCDF = "nc"
+
 def process_pvm(config, raw_data):
 
     # Separates the data into daily chunks
@@ -144,72 +147,89 @@ def process_pvm(config, raw_data):
     # print(ws_log_files)
     # print(ws_file_index)
 
-    if config["output_format"] == "csv":
-        # Can encounter duplicates, will need to account for this
-        for index, log_file in enumerate(ts_log_files):
-            ts_output_path = f"{log_file}.{config['output_format']}"
-            # Find the corresponding date index to the generated file list
-            date_key = ts_file_index[index]
-            df_section = df_timeseries.loc[date_key]
-            skip_file = False
+    # Can encounter duplicates, will need to account for this
+    for index, log_file in enumerate(ts_log_files):
+        ts_output_path = f"{log_file}.{config['output_format']}"
+        # Find the corresponding date index to the generated file list
+        date_key = ts_file_index[index]
+        df_section = df_timeseries.loc[date_key]
+        skip_file = False
 
-            if not Path(os.path.dirname(ts_output_path)).exists():
-                os.makedirs(os.path.dirname(ts_output_path))
+        if not Path(os.path.dirname(ts_output_path)).exists():
+            os.makedirs(os.path.dirname(ts_output_path))
 
-            if Path(ts_output_path).exists():
-                print(f"Existing file found! {ts_output_path}")
-                df_existing_data = pd.read_csv(ts_output_path, index_col=config["datetime_index_field"], parse_dates=True)
-                
-                # Insert timestamp column based on index in first position, format
-                # according to datetime output format
-                df_existing_data.insert(0, config["datetime_index_field"], df_existing_data.index.to_series().dt.strftime(config["datetime_format_out"]))
+        if Path(ts_output_path).exists():
+            print(f"Existing file found! {ts_output_path}")
+            df_existing_data = pd.read_csv(ts_output_path, index_col=config["datetime_index_field"], parse_dates=True)
+            
+            # Insert timestamp column based on index in first position, format
+            # according to datetime output format
+            df_existing_data.insert(0, config["datetime_index_field"], df_existing_data.index.to_series().dt.strftime(config["datetime_format_out"]))
 
-                # print("Current Data:")
-                # print(df_section.info())
-                # print(df_section)
+            # print("Current Data:")
+            # print(df_section.info())
+            # print(df_section)
 
-                # print("Existing Data:")
-                # print(df_existing_data.info())
-                # print(df_existing_data)
+            # print("Existing Data:")
+            # print(df_existing_data.info())
+            # print(df_existing_data)
 
-                # print("Index Differences:")
-                # Checks for records in existing file not present in new dataframe
-                diff_idx_existing = df_existing_data.index.difference(df_section.index, sort=False)
+            # print("Index Differences:")
+            # Checks for records in existing file not present in new dataframe
+            diff_idx_existing = df_existing_data.index.difference(df_section.index, sort=False)
 
-                # Checks for records in new dataframe that are not in existing file,
-                # if there is a difference then both dataframes should be merged.
-                diff_idx_new = df_section.index.difference(df_existing_data.index, sort=False)
-                # print(diff_idx_existing)
-                # print(diff_idx_new)
+            # Checks for records in new dataframe that are not in existing file,
+            # if there is a difference then both dataframes should be merged.
+            diff_idx_new = df_section.index.difference(df_existing_data.index, sort=False)
+            # print(diff_idx_existing)
+            # print(diff_idx_new)
 
-                if not diff_idx_new.empty:
-                    print("Differences found between existing file and new data - merging dataframes...")
-                    # print(df_section.loc[diff_idx_new])
+            if not diff_idx_new.empty:
+                print("Differences found between existing file and new data - merging dataframes...")
+                # print(df_section.loc[diff_idx_new])
 
-                    df_merged = pd.concat([df_existing_data, df_section.loc[diff_idx_new]])
-                    df_section = df_merged
-                else:
-                    print("File indexes match, no new data detected, skipping.")
-                    skip_file = True
-
-            if not skip_file:
-                df_section.sort_index().to_csv(ts_output_path, index=False)
-
-        # By separating into individual files per spectral observation there is no 
-        # need to account for duplicate observances
-        for index, log_file in enumerate(ws_log_files):
-            ws_output_path = f"{log_file}.{config['output_format']}"
-            # Find the corresponding date index to the generated file list
-            date_key = ws_file_index[index]
-
-            if not Path(os.path.dirname(ws_output_path)).exists():
-                os.makedirs(os.path.dirname(ws_output_path))
-
-            if not Path(ws_output_path).exists():
-                wave_spectra_data["dataframe"].loc[date_key].to_csv(ws_output_path, index=False)
+                df_merged = pd.concat([df_existing_data, df_section.loc[diff_idx_new]])
+                df_section = df_merged
             else:
-                print(f"Wave Spectra file ({ws_output_path}) already exists, skipping...")
+                print("File indexes match, no new data detected, skipping.")
+                skip_file = True
 
-    elif config["output_format"] == "nc":
-        # use xarray
+        if not skip_file:
+            # df_section.sort_index().to_csv(ts_output_path, index=False)
+            dataset_type = "timeseries"
+            write_dataset(df_section, config["output_format"], date_key, ts_output_path)
+
+    # By separating into individual files per spectral observation there is no 
+    # need to account for duplicate observances
+    for index, log_file in enumerate(ws_log_files):
+        ws_output_path = f"{log_file}.{config['output_format']}"
+        # Find the corresponding date index to the generated file list
+        date_key = ws_file_index[index]
+
+        if not Path(os.path.dirname(ws_output_path)).exists():
+            os.makedirs(os.path.dirname(ws_output_path))
+
+        if not Path(ws_output_path).exists():
+            dataset_type = "wave_spectra"
+            write_dataset(wave_spectra_data["dataframe"], dataset_type, config["output_format"], date_key, ws_output_path)
+            
+        else:
+            print(f"Wave Spectra file ({ws_output_path}) already exists, skipping...")
+
+
+def write_dataset(data, dataset_type, destination_format, date_key, output_path):
+    if destination_format == FORMAT_CSV:
+        data.loc[date_key].sort_index().to_csv(output_path, index=False)
+        pass
+
+    elif destination_format == FORMAT_NetCDF:
+        # data is assumed to be a Pandas DataFrame
+        data_xr = xr.Dataset.from_dataframe(data)
+        
+        # set metadata based on config
+
+
+        print(data_xr)
+        result = data_xr.to_netcdf(output_path, mode='a', format='NETCDF4_CLASSIC')
+        print(f"File write result: {result}")
         pass
