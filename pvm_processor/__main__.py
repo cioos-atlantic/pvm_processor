@@ -1,6 +1,6 @@
 import argparse
 import json
-from process_pvm import process_pvm
+from pvm_processor.process_pvm import process_pvm
 import os
 from pathlib import Path
 from copy import deepcopy
